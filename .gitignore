@@ -1,0 +1,28 @@
+# Node modules
+**/node_modules/
+
+# Environment variables
+**/.env
+
+# Logs
+**/logs/
+**/*.log
+**/npm-debug.log*
+
+# Build outputs / cache
+**/dist/
+**/build/
+**/*.tsbuildinfo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+*.sw?
+
+# Optional: lock files (if managing individually)
+# **/package-lock.json
+# **/yarn.lock

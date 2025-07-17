@@ -1,9 +1,16 @@
-import express, { response } from 'express';
+import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import {  v4 as uuidv4, validate as uuidValidate } from 'uuid';
+import dotenv from 'dotenv';
 
-const supabaseUrl = "http://127.0.0.1:54321";
-const serviceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_API_URL!;
+const serviceKey = process.env.SUPABASE_SERVICE_KEY!;
+
+if (!supabaseUrl || !serviceKey) {
+    console.log('error retrieving supabase credentials');
+}
 
 const supabase = createClient(supabaseUrl, serviceKey);
 

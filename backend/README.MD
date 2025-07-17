@@ -2,6 +2,8 @@
 
 1. Clone the repo to your machine
 
+2. cd into the backend folder
+
 2. Run: npm install to install all dependencies
 
 3. Open docker desktop (install it at https://docs.docker.com/get-started/introduction/get-docker-desktop/ if you don't have it)
