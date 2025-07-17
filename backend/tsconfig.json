@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                       // modern output with async/await support
+    "module": "CommonJS",                     // required for Node.js (can use ESNext with `"type": "module"` in package.json)
+    "rootDir": "./src",                       // source TypeScript files
+    "outDir": "./dist",                       // compiled JS output
+    "strict": true,                           // enables all strict type-checking options
+    "esModuleInterop": true,                  // allow default imports from CommonJS
+    "forceConsistentCasingInFileNames": true, // catch case mismatches
+    "moduleResolution": "node",               // mimic Node.js resolution
+    "skipLibCheck": true,                     // faster build, skip type-checking .d.ts files
+    "resolveJsonModule": true,                // import .json files directly
+    "noImplicitAny": true,                    // disallow untyped variables
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": false,                         // disallow .js files in TS project
+    "types": ["node"]                         // include Node.js type declarations
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+
