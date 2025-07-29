@@ -31,25 +31,22 @@ interface AddNodeRequestBody {
 
 interface UpdateNodeRequestBody {
     title: string,
-    bufferBase64: string
+    newContent: string
 }
 
-interface Node {
-    id: UUID,
-    title: string,
-    file_link: string
-}
+app.get('/nodes', async (req, res) => {
 
-interface Edge {
-    id: UUID,
-    source: UUID,
-    target: UUID
-}
+    const { data, error } = await supabase
+    .from('Nodes')
+    .select('id, title, file_link')
 
-interface MarkdownFile {
-    id: UUID,
-    file_link: string
-}
+    if (error) {
+        return res.status(500).send(`Supabase error: ${error.code} - ${error.message}`);
+    }
+
+    res.json(data); // [0] because there should only ever be one entry with a given uuid
+
+});
 
 app.get('/nodes/:id', async (req, res) => {
 
@@ -107,34 +104,8 @@ app.post('/nodes', async (req, res) => {
 
         const newNodeId = uuidv4();
 
-
-        // insert new empty markdown file with appropriate name to the markdown-data storage bucket
-
-        // create a temporary empty markdown file to insert
-        const tempFilePath = path.join(__dirname, '/temp.md');
-
-        await fs.writeFile(tempFilePath, '', err => {
-            
-        if (err) {
-            console.error(`Error creating temporary markdown file ${err}`);
-        } else {
-            console.log('Temporary file written successfully');
-        }
-        });
-
         // dump the temporary file to the supabase bucket with correct naming
-        const newMarkdownFileId = uuidv4();
-        const file_link = await emptyFileToBucket(newMarkdownFileId, tempFilePath, 'markdown-files');
-
-        // delete temporary file that was written
-
-        await fs.unlink(tempFilePath, (err) => {
-        if (err) {
-            console.error('Error deleting file:', err);
-        } else {
-            console.log('Temporary file deleted successfully!');
-        }
-        });
+        const file_link = await emptyFileToBucket(newNodeId, 'markdown-files');
 
         // insert given data to the nodes database
         const { error } = await supabase
@@ -184,6 +155,8 @@ app.patch('/nodes/:id', async (req, res) => {
 
         // update title if it needs updating
 
+        console.log(req.body);
+
         if (newNodeData.title) {
             const { error } = await supabase
             .from('Nodes')
@@ -197,10 +170,10 @@ app.patch('/nodes/:id', async (req, res) => {
 
         // update the associated bucket storage if there is a new file version provided
 
-        if (newNodeData.bufferBase64) {
+        if (newNodeData.newContent) {
             
             // make a buffer from the base64 encoded string passed
-            const fileBuffer = Buffer.from(newNodeData.bufferBase64, 'base64');
+            const fileBuffer = Buffer.from(newNodeData.newContent, 'utf-8');
 
             await givenFileToBucket(req.params.id, fileBuffer, 'markdown-files');
         }
@@ -272,6 +245,20 @@ app.delete('/nodes/:id', async (req, res) => {
 
 });
 
+app.get('/links', async (req, res) => {
+
+    const { data, error } = await supabase
+    .from('Links')
+    .select('id, source, target');
+
+    if (error) {
+        return res.status(500).send(`Supabase error: ${error.code} - ${error.message}`);
+    }
+
+    res.json(data); // [0] because there should only ever be one entry with a given uuid
+
+});
+
 app.get('/links/:id', async (req, res) => {
     /**
      * 
@@ -304,6 +291,31 @@ app.get('/links/:id', async (req, res) => {
     }
 });
 
+app.get('/files/:id', async (req, res) => {
+
+    if (uuidValidate(req.params.id)) {
+
+        const { data, error } = await supabase
+        .storage
+        .from('markdown-files')
+        .download(`${req.params.id}/data.md`);
+
+        if (error) {
+            return res.status(500).send(`Supabase error: ${error.name} - ${error.message}`);
+        }
+
+        const arrayBuffer = await data.arrayBuffer();
+        return res.send(Buffer.from(arrayBuffer).toString('utf-8'));
+        
+    } else {
+        if (!uuidValidate(req.params.id)) {
+            return res.status(400).send('Invalid UUID passed as node ID');
+        }
+    }
+        return res.status(400).send('Invalid data format');
+
+});
+
 app.get('/test', (req, res) => {
     return res.send('hello');
 });
@@ -312,11 +324,22 @@ app.listen(port, () => {
     console.log(`app running on port ${port}`);
 });
 
-async function emptyFileToBucket(id: UUID, filePath: string, bucketName: string) {
+async function emptyFileToBucket(id: UUID, bucketName: string) {
+
+    // create a temporary empty markdown file to insert
+    const tempFilePath = path.join(__dirname, '/temp.md');
+
+    await fs.writeFile(tempFilePath, '', err => {
+        if (err) {
+            console.error(`Error creating temporary markdown file ${err}`);
+        } else {
+            console.log('Temporary file written successfully');
+        }
+    });
 
     try {
 
-        const tempFileBuffer = await fs.promises.readFile(filePath);
+        const tempFileBuffer = await fs.promises.readFile(tempFilePath);
 
         const { data, error } = await supabase
         .storage
@@ -329,11 +352,20 @@ async function emptyFileToBucket(id: UUID, filePath: string, bucketName: string)
             console.log('Error uploading image to bucket');
         }
 
+        // delete temp file
+
+        await fs.unlink(tempFilePath, (err) => {
+        if (err) {
+            console.error('Error deleting file:', err);
+        } else {
+            console.log('Temporary file deleted successfully!');
+        }
+        });
+
         return data?.path;
 
     } catch (err) {
         console.log('Error reading file or uploading: ', err);
-        return null;
     }
 
 }
@@ -345,12 +377,12 @@ async function givenFileToBucket(id: UUID, fileBuffer: Buffer, bucketName: strin
         const { data, error } = await supabase
         .storage
         .from(bucketName)
-        .upload(`${id}/data.md`, fileBuffer, {
+        .update(`${id}/data.md`, fileBuffer, {
             contentType: 'text/markdown',
         });
 
         if (error) {
-            console.log('Supabase error uploading image to bucket');
+            console.log('Supabase error uploading image to bucket ', error);
         }
 
         return data?.path;
