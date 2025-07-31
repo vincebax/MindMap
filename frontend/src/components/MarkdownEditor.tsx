@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import { getFile, updateFile, type UUID } from "../../../backend/src/utilities";
+import Nodeslist from "./Nodeslist";
+
 
 
 
 interface EditorProps {
     id: UUID
-    className?:string;
 }
 
-export default function MarkdownEditor({ id , className}: EditorProps) {
+export default function MarkdownEditor({ id}: EditorProps) {
     const [ contents, setContents ] = useState<string>("");
 
     useEffect(() => {
@@ -34,7 +35,7 @@ export default function MarkdownEditor({ id , className}: EditorProps) {
 
         updateHelper();
 
-    }, [contents])
+    }, [contents]) //updates every time contents changes
 
     async function handleContentChange(value?: string) {
 
@@ -43,10 +44,14 @@ export default function MarkdownEditor({ id , className}: EditorProps) {
 
     }
 
+
     return (
+        <div>
         <MDEditor 
         value={contents}
         onChange={handleContentChange}
         />
+        <Nodeslist nodes={[{title:"bob", id:"bob2"}]}/>
+        </div>
     );
 }

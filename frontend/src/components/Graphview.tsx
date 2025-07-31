@@ -6,7 +6,6 @@ import ForceGraph3D from "react-force-graph-3d";
 
 interface GraphProps {
     handleClick: (id: string) => void;
-    className?:string;
 }
 
 
@@ -15,8 +14,8 @@ interface GraphData {
   links: { source: string, target: string, [key: string]: any }[]
 }
 
-export default function GraphView({ handleClick, className }: GraphProps) {
-    const [graphData, setGraphData] = useState<GraphData>({nodes: [{title:"hello2", id:"hello2"}], links: []});
+export default function GraphView({ handleClick}: GraphProps) {
+    const [graphData, setGraphData] = useState<GraphData>({nodes: [], links: []});
     const [isloading, setIsLoading] = useState<boolean>(true);
 
     useEffect(() => {
@@ -31,7 +30,7 @@ export default function GraphView({ handleClick, className }: GraphProps) {
         fetchData();
 
     }, []);
-
+    
     if (isloading) return <h1>LOADING</h1>;
     else {
         return (
